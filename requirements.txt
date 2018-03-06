@@ -1,0 +1,7 @@
+afsk==0.0.3
+audiogen==0.1.2
+bitarray==0.8.1
+gps3==0.33.3
+python-dateutil==2.6.1
+PyAudio==0.2.11
+RPi.GPIO==0.6.3

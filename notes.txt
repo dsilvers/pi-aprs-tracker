@@ -1,0 +1,103 @@
+http://192.168.2.63/getSituation
+
+{"GPSLastFixSinceMidnightUTC":58572,"GPSLatitude":43.082706,"GPSLongitude":-89.210815,"GPSFixQuality":2,"GPSHeightAboveEllipsoid":763.1004,"GPSGeoidSep":-110.89239,"GPSSatellites":12,"GPSSatellitesTracked":20,"GPSSatellitesSeen":16,"GPSHorizontalAccuracy":5.8,"GPSNACp":10,"GPSAltitudeMSL":873.9928,"GPSVerticalAccuracy":11.6,"GPSVerticalSpeed":-0.44619426,"GPSLastFixLocalTime":"0001-01-01T00:06:05.22Z","GPSTrueCourse":0,"GPSTurnRate":0,"GPSGroundSpeed":0.1684809394761622,"GPSLastGroundTrackTime":"0001-01-01T00:06:05.22Z","GPSTime":"2018-03-01T16:16:05Z","GPSLastGPSTimeStratuxTime":"0001-01-01T00:05:58.22Z","GPSLastValidNMEAMessageTime":"0001-01-01T00:06:05.22Z","GPSLastValidNMEAMessage":"$PUBX,00,161612.00,4304.96231,N,08912.64901,W,232.593,D3,2.9,4.4,0.312,0.00,0.136,,0.91,1.64,1.10,12,0,0*4D","GPSPositionSampleRate":1,"BaroTemperature":0,"BaroPressureAltitude":99999,"BaroVerticalSpeed":99999,"BaroLastMeasurementTime":"0001-01-01T00:00:00Z","AHRSPitch":0,"AHRSRoll":0,"AHRSGyroHeading":0,"AHRSMagHeading":0,"AHRSSlipSkid":0,"AHRSTurnRate":0,"AHRSGLoad":0,"AHRSGLoadMin":0,"AHRSGLoadMax":0,"AHRSLastAttitudeTime":"0001-01-01T00:06:05.92Z","AHRSStatus":1}
+
+
+
+ KD9KEO
+ -
+ 9
+ >
+ APZ001
+ ,
+ WIDE1-1
+ ,
+ WIDE2-2
+ :
+ /
+ 235619h
+ 4304.95N
+ /
+ 08912.63W
+ >
+ 000
+ /
+ 003
+ /
+ A000859
+
+Tracksoar v1.2
+
+
+
+
+https://github.com/casebeer/afsk
+$ pip install afsk
+
+apt-get install libjack-jackd2-dev portaudio19-dev
+
+$ pip install --allow-external PyAudio --allow-unverified PyAudio PyAudio
+
+----
+
+https://github.com/PiInTheSky/pits/blob/master/tracker/send_aprs
+
+sudo modprobe snd-bcm2835
+
+
+
+
+
+
+get gps location
+    wifi?
+    gpsd?
+
+make sure clock is set?
+    sync to gps?
+
+power on LED
+gps sync LED
+TX LED
+
+APRS config
+    callsign
+    callsign ID 
+    destination
+    destination ID (probably 0 or empty)
+    path 1/2
+    ttl 1/2
+    send sensor data?
+    send comment data?
+
+
+
+rPi / GPSD tips
+https://gary-dalton.github.io/RaspberryPi-projects/rpi3_gps.html
+
+
+
+Ubox changing mode
+https://www.handheldgroup.com/support-rugged-computers/knowledgebase-KB/1653/
+https://www.u-blox.com/en/product/u-center-windows
+
+
+
+PiInTheSky script
+https://github.com/PiInTheSky/pits/blob/master/tracker/send_aprs
+
+
+
+RPi special GPIO pins for audio
+https://raspberrypi.stackexchange.com/questions/49600/how-to-output-audio-signals-through-gpio
+
+
+
+GPSD fields
+http://www.catb.org/gpsd/gpsd_json.html
+
+
+AX.25 hints
+http://n1vg.net/packet/
+
+
