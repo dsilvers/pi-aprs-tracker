@@ -1,17 +1,21 @@
 import audiogen
 import dateutil.parser
+import logging
+import math
+from os import system, remove
 import RPi.GPIO as GPIO
 import time
 
+import afsk.afsk
+from afsk.ax25 import UI
 from config import *
-from ax25 import UI
 
 
 def send_packet(gps_data):
 
     # Format callsign and SSID
     # ABC123-4 with a SSID and ASB123 without one
-    if CALLSIGN_SSID == "" || CALLSIGN_SSID == 0:
+    if CALLSIGN_SSID == "" or CALLSIGN_SSID == 0:
         callsign = CALLSIGN
     else:
         callsign = "{}-{}".format(CALLSIGN, CALLSIGN_SSID)
@@ -19,7 +23,7 @@ def send_packet(gps_data):
     
     # Same thing for the destination and SSID. SSID is not typically used
     # for destinations in the APRS world.
-    if DESTINATION_SSID == "" || DESTINATION_SSID == 0:
+    if DESTINATION_SSID == "" or DESTINATION_SSID == 0:
         destination = DESTINATION
     else:
         destination = "{}-{}".format(DESTINATION, DESTINATION_SSID)
@@ -45,17 +49,31 @@ def send_packet(gps_data):
     #    speed    Speed in meters per second
     #    climb    Climb rate (or sink) in meters per second
 
-    # Parse Longitude and latitude
-    # Determine proper N/S/E/W directions
-    latitude = gps_data['lat']
-    longitude = gps_data['lon']
+    # Parse Longitude and latitude, convert from decimal degrees to degrees and
+    # decimal minutes.
+    latitude_decimal_degrees = gps_data['lat']
+    longitude_decimal_degrees = gps_data['lon']
 
-    if latitude < 0.0:
+    latitude_frac_degrees, latitude_whole_degrees = math.modf(abs(latitude_decimal_degrees))
+    longitude_frac_degrees, longitude_whole_degrees = math.modf(abs(longitude_decimal_degrees))
+
+    latitude = "{:02d}{:05.2f}".format(
+        int(latitude_whole_degrees),
+        latitude_frac_degrees * 60.0,
+    )
+
+    longitude = "{:03d}{:05.2f}".format(
+        int(longitude_whole_degrees),
+        longitude_frac_degrees * 60.0,
+    )
+
+    # Determine proper N/S/E/W directions
+    if gps_data['lat'] < 0.0:
         latitude_direction = "S"
     else:
         latitude_direction = "N"
 
-    if longitude < 0.0:
+    if gps_data['lon'] < 0.0:
         longitude_direction = "W"
     else:
         longitude_direction = "E"
@@ -69,19 +87,27 @@ def send_packet(gps_data):
     # APRS Info string goes something like this:
     # /235619h4304.95N/08912.63W>000/003/A=000859 comment
 
-    info = "/{:%H%M%S}h{:05.2f}{}{}{:05.2f}{}{}{:03d}/{:03d}/A{:06d} {}".format(
+    info = "/{:%H%M%S}h{}{}{}{}{}{}{:03d}/{:03d}/A{:06d} {}".format(
         gps_time,                               # datetime object
-        abs(latitude) * 100.0,                  # 04304.95
+        latitude,                               # 04304.95
         latitude_direction,                     # N/S
         APRS_SYMBOL1,                           # Symbol lookup table, see config
-        abs(longitude) * 100.0,                 # 08912.63
+        longitude,                              # 08912.63
         longitude_direction,                    # E/W
         APRS_SYMBOL2,                           # Symbol lookup table, see config
-        gps_data['track'],                      # Magnetic heading
+        int(round(gps_data['track'])),                      # Magnetic heading
         int(round(gps_data['speed'] / 0.51444)),# Speed in knots
         int(round(gps_data['alt'] / 0.3048)),   # Convert altitude to meters
         APRS_COMMENT,                           # Set comment text in config
     )
+
+    logging.info("{}>{},{}:{}".format(
+        callsign,
+        destination,
+        DIGIPEATING_PATH,
+        info,
+    ))
+
 
     # Create packet. This formats the headers with CRC checksums and all that
     # stuff that we're grateful we didn't have to figure out ourselves.
@@ -93,6 +119,13 @@ def send_packet(gps_data):
     )
     audio = afsk.encode(packet.unparse())
 
+
+    # Sometimes for debugging saving the generated .wav is helpful.
+    # Make sure this location is in a ramdisk!
+    with open("/tmp/output.wav", "w") as f:
+        audiogen.sampler.write_wav(f, audio)
+        
+
     # Enable radio transmit push-to-talk pin by driving it high.
     GPIO.output(RADIO_TX_PIN, GPIO.HIGH)
 
@@ -103,11 +136,11 @@ def send_packet(gps_data):
     time.sleep(RADIO_TX_DELAY / 1000.0)
 
     # Play the audio sample out the PWM pin
-    audiogen.sampler.play(audio, blocking=True)
+    # For some reason this results in garbled audio
+    #audiogen.sampler.play(audio, blocking=True)
 
-    # Sometimes for debugging saving the generated .wav is helpful.
-    #with open("/tmp/output.wav", "w") as f:
-    #    audiogen.sampler.write_wav(f, audio)
+    system("play -q /tmp/output.wav")
+    #remove("/tmp/output.wav")
 
     # Disable radio transmit
     GPIO.output(RADIO_TX_PIN, GPIO.LOW)

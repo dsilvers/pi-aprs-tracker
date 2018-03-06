@@ -1,4 +1,4 @@
-from scheduler import APRSScheduler
+from .scheduler import APRSScheduler
 from config import SCHEDULER_TIME_INTERVAL
 
 import time
@@ -11,6 +11,9 @@ class TimerScheduler(APRSScheduler):
     """
 
     def ready(self):
+
+        if not self.last_packet_timestamp:
+            return True
 
         if int(time.time()) - self.last_packet_timestamp > SCHEDULER_TIME_INTERVAL:
             return True

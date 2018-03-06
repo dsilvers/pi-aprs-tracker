@@ -23,7 +23,7 @@ CALLSIGN_SSID = 9
 #
 # Full list of "TO" calls is here:
 # http://www.aprs.org/aprs11/tocalls.txt
-DESTINATION      "APZ999"
+DESTINATION = "APZ999"
 DESTINATION_SSID = 0
 
 
@@ -106,5 +106,8 @@ ALL_OUTPUT_PINS = [RADIO_TX_PIN, YELLOW_LED_PIN, GREEN_LED_PIN, RADIO_PWM_PIN]
 
 # How long to wait after turning on the transmitter to begin playing the AX.25
 # transmission? Trackuino uses 300 milliseconds.
-RADIO_TX_DELAY = 300
+#
+# In our hardware setup, this doesn't seem to make any difference...
+# The transmissions have always gone though no matter the size of delay.
+RADIO_TX_DELAY = 5
 
