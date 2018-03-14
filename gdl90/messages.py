@@ -1,3 +1,5 @@
+import logging
+
 #
 # messages.py
 #
@@ -85,7 +87,11 @@ def _parseMessageType10and20(msgType, msgBytes):
     fields.append(_signed24(msgBytes[8:]) * latLongIncrement) ;# longitude
     
     altMetric = _thunkByte(msgBytes[11], 0xff, 4) + _thunkByte(msgBytes[12], 0xf0, -4)
-    fields.append((altMetric * 25) - 1000) ;# altitude in 25ft resolution
+    if altMetric == 0xfff: # special code for showing that pressure altitude is unavailable
+        altMetric = None
+    else:
+        altMetric = (altMetric * 25) - 1000
+    fields.append(altMetric) # altitude in 25ft resolution
     
     fields.append(_thunkByte(msgBytes[12], 0x0f)) ;# misc
     fields.append(_thunkByte(msgBytes[13], 0xf0, -4)) ;# NIC
@@ -95,9 +101,13 @@ def _parseMessageType10and20(msgType, msgBytes):
     
     # 12-bit signed value of 64 fpm increments
     vertVelo = _thunkByte(msgBytes[15], 0x0f, 8) + _thunkByte(msgBytes[16])
-    if vertVelo > 2047:
-        vertVelo -= 4096
-    fields.append(vertVelo * 64) ;# vertical velocity
+    if vertVelo == 2048: # 0x800 special code for FPM being unavailable
+        vertVelo = None
+    else:
+        if vertVelo > 2047:
+            vertVelo -= 4096
+        vertVelo = vertVelo * 64
+    fields.append(vertVelo) # vertical velocity
     
     trackIncrement = 360.0 / 256
     fields.append(msgBytes[17] * trackIncrement) ;# track/heading

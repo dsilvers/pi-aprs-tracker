@@ -165,17 +165,23 @@ class Decoder(object):
             ) + datetime.timedelta(seconds=int(m.TimeStamp))
 
             self.gpsAge += 1
+
+            logging.info('MGS00: Secs since 00Z is {}, current datetime: {}, gpsAge: {}'.format(
+                self.seconds_since_midnight, self.current_datetime, self.gpsAge,
+            ))
             return 0  # message 0 received
         
         elif m.MsgType == 'OwnershipReport':
             # MsgType Status Type Address Latitude Longitude Altitude Misc NavIntegrityCat NavAccuracyCat 
             # HVelocity VVelocity TrackHeading EmitterCat CallSign Code
 
-            logging.info('MSG 10: %0.7f %0.7f %d %d %d' % (m.Latitude, m.Longitude, m.HVelocity, m.Altitude, m.TrackHeading))
+            logging.info('MSG10: {},{}   {} kts, {} fpm, {} pAlt, {} hdg, {} NIC, {} nacP'.format(
+                m.Latitude, m.Longitude, m.HVelocity, m.VVelocity, m.Altitude, 
+                m.TrackHeading, m.NavIntegrityCat, m.NavAccuracyCat))
 
             self.latitude = m.Latitude
             self.longitude = m.Longitude
-            self.course = m.TrackHeading        
+            self.course = int(m.TrackHeading)        
             self.vertical_speed = m.VVelocity   # fpm
             self.speed = m.HVelocity            # knots
             self.pressure_altitude = m.Altitude 
@@ -187,8 +193,9 @@ class Decoder(object):
         
         elif m.MsgType == 'OwnershipGeometricAltitude':
             # MsgType Altitude VerticalMetrics
-            logging.info('MSG11: %d %04xh' % (m.Altitude, m.VerticalMetrics))
+            logging.info('MSG11: %d gpsAlt %04xh' % (m.Altitude, m.VerticalMetrics))
             self.altitude = m.Altitude
+            self.gpsAge = 0
 
             return 11 # message number 11
 

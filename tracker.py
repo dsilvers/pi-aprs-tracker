@@ -63,8 +63,6 @@ def main():
     gps.loop()
 
 
-
-
 if __name__ == "__main__":
     try:
         main()

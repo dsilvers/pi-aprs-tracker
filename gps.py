@@ -21,7 +21,7 @@ class GPS_Data:
         self.speed = speed
         self.current_datetime = current_datetime
 
-    def __unicode__(self):
+    def __str__(self):
         if self.fix:
             fix = "3D FIX"
         else:
