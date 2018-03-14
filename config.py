@@ -62,8 +62,10 @@ APRS_COMMENT = "aprs-pi"
 # - "gdl90" is a client that listens for GDL90 messages broadcast on the local
 #    network and parses the GPS data from it. Tested using a stratux and
 #    L-3 NGT-9000 transponder.
-GPS_CLASS = "gpsd"
+GPS_CLASS = "gdl90"
 
+# If you are using the GDL90 receiver, listen on this port:
+GDL90_RECV_PORT = 4000
 
 
 # Specify the scheduler class you would like to use

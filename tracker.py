@@ -21,9 +21,16 @@ if SCHEDULER_CLASS == "time":
 
 
 if GPS_CLASS == "gpsd":
-    from gps.gpsd import GPSD_Client as GPS
+    from gps_gpsd import GPSD_Client as GPS
 elif GPS_CLASS == "gdl90":
-    from gps.gdl90 import GDL90_Client as GPS
+    from gps_gdl90 import GDL90_Client as GPS
+
+
+# Create the GPS class to read GPS data, assign a scheduler to decide when
+# we want to send packets and assign the GPS LED pin number.
+gps = GPS()
+gps.scheduler = Scheduler()
+gps.gps_led_pin = YELLOW_LED_PIN
 
 
 # TODO
@@ -52,12 +59,6 @@ def main():
     # the volume level. 
     system("amixer set PCM -- 400")
 
-    # Create the GPS class to read GPS data, assign a scheduler to decide when
-    # we want to send packets and assign the GPS LED pin number.
-    gps = GPS()
-    gps.scheduler = Scheduler()
-    gps.gps_led_pin = YELLOW_LED_PIN
-
     # Loop through the GPS data as we receive it.
     gps.loop()
 
@@ -72,6 +73,9 @@ if __name__ == "__main__":
         # Turn off the lights
         GPIO.output(ALL_OUTPUT_PINS, GPIO.LOW)
         GPIO.cleanup()
+
+        # Close files and socket connections
+        gps.shutdown()
         
         # Close the door
         sys.exit(0)

@@ -21,6 +21,21 @@ class GPS_Data:
         self.speed = speed
         self.current_datetime = current_datetime
 
+    def __unicode__(self):
+        if self.fix:
+            fix = "3D FIX"
+        else:
+            fix = "FIX"
+        return "{} {},{}  {} ft  {} deg  {} kts {}".format(
+            fix,
+            self.latitude,
+            self.longitude,
+            self.altitude,
+            self.course,
+            self.speed,
+            self.current_datetime,
+        )
+
 
 # GPS base class
 # Override the setup and loop methods to create your own GPS readers/parsers
@@ -48,6 +63,11 @@ class Base_GPS:
     # Loop should initialize start_datetime when we have a valid datetime
     # from a GPS or other time source.
     def loop(self):
+        pass
+
+
+    # shutdown method for cleaning up files, closing sockets, etc.
+    def shutdown(self):
         pass
 
 

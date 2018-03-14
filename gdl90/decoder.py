@@ -2,46 +2,56 @@
 # decoder.py
 #
 
-import sys
-import datetime
 from collections import deque
+import datetime
 import messages
+import logging
 from gdl90.fcs import crcCheck
-from messagesuat import messageUatToObject
+import sys
 
 
 class Decoder(object):
     """GDL-90 data link interface decoder class"""
 
     def __init__(self):
-        self.format = 'normal'
-        self.uatOutput = False
         self.inputBuffer = bytearray()
         self.messages = deque()
         self.parserSynchronized = False
-        self.stats = {
-            'msgCount' : 0,
-            'resync' : 0,
-            'msgs' : { 0 : [0, 0] },
-        }
-        self.reportFrequency = 10
+
+        # lat, lon, course, speed reporting
+        self.latitude = 0.0
+        self.longitude = 0.0
+        self.course = None
+        self.speed = None
+        self.pressure_altitude = None
+        self.altitude = None
+        self.vertical_speed = 0.0   # fpm
+        self.nic = 0        # >= 8 is probably great for us
+        self.nac = 0         # >= 8 is probably great for us
+
+        self.gpsAge = 9999
+        self.gpsMaxAge = 5
         
-        # altitude reporting in plotflight mode
-        self.altitude = 0
-        self.altitudeAge = 9999
-        self.altitudeMaxAge = 5
-        
-        # setup internal time tracking
-        self.gpsTimeReceived = False
-        self.dayStart = None
-        self.currtime = datetime.datetime.utcnow()
-        self.heartbeatInterval = datetime.timedelta(seconds=1)
+        self.seconds_since_midnight = 0
+        self.current_datetime = datetime.datetime.combine(
+            datetime.date.today(),
+            datetime.time(0, 0, 0),
+        )
+
+
+    @property
+    def fix(self):
+        # Check if we have a recent GPS fix
+        if self.nac >= 8 and self.gpsAge < self.gpsMaxAge:
+            return True
+        return False
     
     
     def addBytes(self, data):
-        """add raw input bytes for decode processing"""
+        """add raw input bytes for decode processing
+        returns None or whatever the message number that was processed"""
         self.inputBuffer.extend(data)
-        self._parseMessages()
+        return self._parseMessages()
     
     
     def _log(self, msg):
@@ -53,13 +63,13 @@ class Decoder(object):
         if not self.parserSynchronized:
             if not self._resynchronizeParser():
                 # false if we empty the input buffer
-                return
+                return None
         
         while True:
             # Check that buffer has enough bytes to use
             if len(self.inputBuffer) < 2:
                 #self._log("buffer reached low watermark")
-                return
+                return None
             
             # We expect 0x7e at the head of the buffer
             if self.inputBuffer[0] != 0x7e:
@@ -67,7 +77,7 @@ class Decoder(object):
                 #self._log("synchronization lost")
                 if not self._resynchronizeParser():
                     # false if we empty the input buffer
-                    return
+                    return None
             
             # Look to see if we have an ending 0x7e marker yet
             try:
@@ -75,16 +85,17 @@ class Decoder(object):
             except ValueError:
                 # no end marker found yet
                 #self._log("no end marker found; leaving parser for now")
-                return
+                return None
             
             # Extract byte message without markers and delete bytes from buffer
             msg = self.inputBuffer[1:i]
             del(self.inputBuffer[0:i+1])
             
             # Decode the received message
-            self._decodeMessage(msg)
+            # Returns whatever was decoded, either None or a message number
+            return self._decodeMessage(msg)
         
-        return
+        return None
     
     
     def _resynchronizeParser(self):
@@ -92,7 +103,6 @@ class Decoder(object):
         Return:  true=resynchronized, false=buffer empty & not synced"""
         
         self.parserSynchronized = False
-        self.stats['resync'] += 1
         
         while True:
             if len(self.inputBuffer) < 2:
@@ -127,86 +137,68 @@ class Decoder(object):
 
     
     def _decodeMessage(self, escapedMessage):
-        """decode one GDL90 message without the start/end markers"""
+        """
+        decode one GDL90 message without the start/end markers
+        returns None or othe message number that was processed
+        """
         
         rawMsg = self._unescape(escapedMessage)
         if len(rawMsg) < 5:
-            return False
+            return None
         msg = rawMsg[:-2]
         crc = rawMsg[-2:]
         crcValid = crcCheck(msg, crc)
         
-        """
-        self.stats['msgCount'] += 1
-        if (self.stats['msgCount'] % self.reportFrequency) == 0:
-            print "Statistics: total msgs = %d, resyncs = %d" % (self.stats['msgCount'], self.stats['resync'])
-            msgTypes = self.stats['msgs'].keys()
-            msgTypes.sort()
-            for mt in msgTypes:
-                (g, b) = self.stats['msgs'][mt]
-                print "  Messge #%d: %d good, %d bad" % (mt, g, b)
-        """
-        
-        # Create a new entry for this message type if it doesn't exist
-        if not msg[0] in self.stats['msgs'].keys():
-            self.stats['msgs'][msg[0]] = [0,0]
-        
-        if not crcValid:
-            self.stats['msgs'][msg[0]][1] += 1
-            #print "****BAD CRC****"
-            return False
-        self.stats['msgs'][msg[0]][0] += 1
-        
-        """
-        #if msg[0] in [0, 10, 11]:
-        if msg[0] in [101]:
-            print "msg%d: " % (msg[0])
-            for m in [msg]:
-                hexstr = ""
-                for n in range(len(msg)):
-                    if (n % 4) == 0:  hexstr += " "
-                    hexstr += "%02x" % (msg[n])
-                print " " + hexstr
-        """
-        
         m = messages.messageToObject(msg)
         if not m:
-            return False
+            return None
         
         if m.MsgType == 'Heartbeat':
-            self.currtime += self.heartbeatInterval
-            if self.format == 'normal':
-                print 'MSG00: s1=%02x, s2=%02x, ts=%02x' % (m.StatusByte1, m.StatusByte2, m.TimeStamp)
-            elif self.format == 'plotflight':
-                self.altitudeAge += 1
+            # MsgType StatusByte1 StatusByte2 TimeStamp MessageCounts
+            logging.info('MSG00: s1=%02x, s2=%02x, ts=%02x' % (m.StatusByte1, m.StatusByte2, m.TimeStamp))
+
+            # TimeStamp is the number of seconds since midnight, UTC
+            self.seconds_since_midnight = int(m.TimeStamp)
+            self.current_datetime = datetime.datetime.combine(
+                datetime.date.today(),
+                datetime.time(0, 0, 0),
+            ) + datetime.timedelta(seconds=int(m.TimeStamp))
+
+            self.gpsAge += 1
+            return 0  # message 0 received
         
         elif m.MsgType == 'OwnershipReport':
-            if self.format == 'normal':
-                print 'MSG10: %0.7f %0.7f %d %d %d' % (m.Latitude, m.Longitude, m.HVelocity, m.Altitude, m.TrackHeading)
-            elif self.format == 'plotflight':
-                if self.altitudeAge < self.altitudeMaxAge:
-                    altitude = self.altitude
-                else:
-                    # revert to 25' resolution altitude from ownership report
-                    altitude = m.Altitude
-                
-                # Must have the GPS time from a message 101 before outputting anything
-                if not self.gpsTimeReceived:
-                    return True
-                print '%02d:%02d:%02d %0.7f %0.7f %d %d %d' % (self.currtime.hour, self.currtime.minute, self.currtime.second, m.Latitude, m.Longitude, m.HVelocity, altitude, m.TrackHeading)
+            # MsgType Status Type Address Latitude Longitude Altitude Misc NavIntegrityCat NavAccuracyCat 
+            # HVelocity VVelocity TrackHeading EmitterCat CallSign Code
+
+            logging.info('MSG 10: %0.7f %0.7f %d %d %d' % (m.Latitude, m.Longitude, m.HVelocity, m.Altitude, m.TrackHeading))
+
+            self.latitude = m.Latitude
+            self.longitude = m.Longitude
+            self.course = m.TrackHeading        
+            self.vertical_speed = m.VVelocity   # fpm
+            self.speed = m.HVelocity            # knots
+            self.pressure_altitude = m.Altitude 
+            self.nic = m.NavIntegrityCat        # >= 8 is probably great for us
+            self.nac = m.NavAccuracyCat         # >= 8 is probably great for us
+
+            return 10 # message number 10
+
         
         elif m.MsgType == 'OwnershipGeometricAltitude':
-            if self.format == 'normal':
-                print 'MSG11: %d %04xh' % (m.Altitude, m.VerticalMetrics)
-            elif self.format == 'plotflight':
-                self.altitude = m.Altitude
-                self.altitudeAge = 0
+            # MsgType Altitude VerticalMetrics
+            logging.info('MSG11: %d %04xh' % (m.Altitude, m.VerticalMetrics))
+            self.altitude = m.Altitude
+
+            return 11 # message number 11
+
         
-        elif m.MsgType == 'TrafficReport':
-            if self.format == 'normal':
-                print 'MSG20: %0.7f %0.7f %dkt %dfpm %dft %02ddeg' % (m.Latitude, m.Longitude, m.HVelocity, m.VVelocity, m.Altitude, m.TrackHeading)
-        
+        # This message does not seem to be sent by my NGT-9000 or stratux
+        # Not sure what that's all about... would be super userful to have a 
+        # real clock.
+        """
         elif m.MsgType == 'GpsTime':
+
             if not self.gpsTimeReceived:
                 self.gpsTimeReceived = True
                 utcTime = datetime.time(m.Hour, m.Minute, 0)
@@ -217,13 +209,12 @@ class Decoder(object):
                     utcTime = datetime.time(m.Hour, m.Minute, 0)
                     self.currtime = datetime.datetime.combine(self.currtime, utcTime)
             
-            if self.format == 'normal':
-                print 'MSG101: %02d:%02d UTC (waas = %s)' % (m.Hour, m.Minute, m.Waas)
-        
-        elif m.MsgType == 'UplinkData' and self.uatOutput == True:
-            messageUatToObject(m)
-        
-        return True
+            print 'MSG101: %02d:%02d UTC (waas = %s)' % (m.Hour, m.Minute, m.Waas)
+        """
+
+        # Traffic reporting code has been ripped out, we don't need it
+
+        return None
     
     
     def _unescape(self, msg):
