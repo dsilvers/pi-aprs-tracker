@@ -10,12 +10,18 @@ class TimerScheduler(APRSScheduler):
     Returns True if we're ready to send our message.
     """
 
-    def ready(self):
+    def ready(self, gps_data, start_datetime):
 
-        if not self.last_packet_timestamp:
+        # Probably should log this one, could get stuck here I guess
+        if start_datetime is None:
+            return False
+
+        # First packet of the loop, always just send it
+        if not self.last_packet_gps_data:
             return True
 
-        if int(time.time()) - self.last_packet_timestamp > SCHEDULER_TIME_INTERVAL:
+
+        if (gps_data.current_datetime - self.last_packet_gps_data.current_datetime).total_seconds() >= SCHEDULER_TIME_INTERVAL:
             return True
 
         return False

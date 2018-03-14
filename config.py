@@ -54,6 +54,18 @@ APRS_SYMBOL2 = '>'
 APRS_COMMENT = "aprs-pi"
 
 
+# Specify the GPS type we are using. There are currently two supported types,
+# but you can create your own.
+#
+# - "gpsd" is a gpsd client that reads from a connected USB or serial GPS.
+#
+# - "gdl90" is a client that listens for GDL90 messages broadcast on the local
+#    network and parses the GPS data from it. Tested using a stratux and
+#    L-3 NGT-9000 transponder.
+GPS_CLASS = "gpsd"
+
+
+
 # Specify the scheduler class you would like to use
 #
 # - "time" sends a packet at a fixed time (once every SCHEDULER_TIME_INTERVAL seconds)
@@ -62,9 +74,9 @@ APRS_COMMENT = "aprs-pi"
 # - "smart" is the SmartBeaconing and CornerPegging algorithim
 #         > see scheduler_smart.py
 #
-# - "custom?", specify your own? write your own?
+# - "custom", specify your own? write your own? look at scheduler base class.
 #
-SCHEDULER = "time"
+SCHEDULER_CLASS = "time"
 
 # If using the time scheduler, send a packet every 60 seconds
 SCHEDULER_TIME_INTERVAL = 60
@@ -87,6 +99,8 @@ BEACON_TURN_SLOPE =     255
 # The Radiometrix pin #4 set high signals the module to transmit.
 # Yellow LED is used for the GPS lock.
 # Green LED is used to signal that the script is running.
+#
+# If you add a pin here, make sure it is listed in ALL_OUTPUT_PINS
 RADIO_TX_PIN = 23
 YELLOW_LED_PIN = 24
 GREEN_LED_PIN = 25

@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-from gps3 import gps3
 import logging
 from os import system
 import RPi.GPIO as GPIO
 import sys
 import time
 
-from aprs import send_packet
 from config import *
 
 
@@ -15,8 +13,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-if SCHEDULER == "time":
+# If you create additional scheduler and GPS classes, specify them
+# here with additional logic.
+
+if SCHEDULER_CLASS == "time":
     from scheduler.scheduler_time import TimerScheduler as Scheduler
+
+
+if GPS_CLASS == "gpsd":
+    from gps.gpsd import GPSD_Client as GPS
+elif GPS_CLASS == "gdl90":
+    from gps.gdl90 import GDL90_Client as GPS
 
 
 # TODO
@@ -24,6 +31,9 @@ if SCHEDULER == "time":
 # test GPSD dying
 # fstab -> tmpdisk
 # tune amount of tx delay (doesn't seem to make a difference)
+# set volume (amixer set PCM -- 400)
+# shut off NTP and other things on this image
+# ensure that hopping to the next day works with the weird clock
 
 
 def main():
@@ -38,49 +48,20 @@ def main():
     # radio.
     system("raspi-gpio set {} a5".format(RADIO_PWM_PIN))
 
-    # Script running, turn on the green LED
-    GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
+    # One of the projects that we borrowed code from recommended setting
+    # the volume level. 
+    system("amixer set PCM -- 400")
+
+    # Create the GPS class to read GPS data, assign a scheduler to decide when
+    # we want to send packets and assign the GPS LED pin number.
+    gps = GPS()
+    gps.scheduler = Scheduler()
+    gps.gps_led_pin = YELLOW_LED_PIN
+
+    # Loop through the GPS data as we receive it.
+    gps.loop()
 
 
-    # Setup our connection to the gpsd daemon.
-    # We will iterate through the data sent through the socket connection.
-    gps_socket = gps3.GPSDSocket()
-    gps_stream = gps3.DataStream()
-    gps_socket.connect()
-    gps_socket.watch()
-
-    scheduler = Scheduler()
-
-    for gps_data in gps_socket:
-        if gps_data:
-            gps_stream.unpack(gps_data)
-            tpv = gps_stream.TPV
-
-            # Data stream sent by gpsd are sourced from the JSON data as
-            # documented here: http://www.catb.org/gpsd/gpsd_json.html
-            # Mode is the only field that will ALWAYS be there. Check that
-            # we have data for the other fields before expecting them to be there.
-            #
-            #    mode     GPS fix? 0/1 = none, 2 = 2D, 3 = 3D [we want a 3D fix]
-
-            # Require a 3D fix before continuing
-            # Turn off GPS LED if there is no fix
-            if tpv['mode'] != 3:
-                logger.info("Waitng for 3D GPS fix")
-                GPIO.output(YELLOW_LED_PIN, GPIO.LOW)
-                continue
-
-            # Turn on the GPS LED if we have a new GPS fix
-            if not scheduler.last_packet_gps_data or \
-                scheduler.last_packet_gps_data['mode'] != 3:
-                GPIO.output(YELLOW_LED_PIN, GPIO.HIGH)
-
-            scheduler.gps_data = tpv
-            if scheduler.ready():
-                logger.info(tpv)
-                logger.info("Sending packet")
-                send_packet(tpv)
-                scheduler.sent()
 
 
 if __name__ == "__main__":

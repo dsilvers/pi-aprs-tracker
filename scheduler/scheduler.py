@@ -1,5 +1,8 @@
 import time
 
+#from gps.gps import GPS_Data
+
+
 # Base Scheduler class
 #
 # Stores
@@ -7,23 +10,21 @@ import time
 #   - previous GPS data from the last time we sent a packet
 
 class APRSScheduler:
-    # Current GPS data to compare against the previous packet data.
-    gps_data = None
-
     # The GPS data from the last time we sent out a packet.
     last_packet_gps_data = None
 
-    # Timestamp of the last packet we sent
-    last_packet_timestamp = None
 
-    def ready(self):
+    def ready(self, gps_data=None, start_datetime=None):
         # Overload this function to determine if we're ready to send a packet.
         # True if it's time to send one
         # False if the time is not quite right
+        #
+        # Arguments are 
+        # - GPS Data class populated with the current GPS fix and time
+        # - The first datetime we received from the position source to track
+        #   how long this script has been running.
         pass
 
 
-    def sent(self):
-        self.last_packet_gps_data = self.gps_data
-        self.gps_data = None
-        self.last_packet_timestamp = int(time.time())
+    def sent(self, gps_data):
+        self.last_packet_gps_data = gps_data
