@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # here with additional logic.
 
 if SCHEDULER_CLASS == "time":
-    from scheduler.scheduler_time import TimerScheduler as Scheduler
+    from scheduler_time import TimerScheduler as Scheduler
 
 
 if GPS_CLASS == "gpsd":
