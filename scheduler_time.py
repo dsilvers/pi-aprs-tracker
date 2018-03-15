@@ -1,10 +1,8 @@
-from .scheduler import APRSScheduler
+import scheduler_base
 from config import SCHEDULER_TIME_INTERVAL
 
-import time
 
-
-class TimerScheduler(APRSScheduler):
+class TimerScheduler(scheduler_base.APRSScheduler):
     """
     Very simple scheduler. Send a message every SCHEDULER_TIME_INTERVAL seconds.
     Returns True if we're ready to send our message.

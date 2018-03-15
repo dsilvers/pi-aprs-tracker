@@ -27,4 +27,6 @@ class APRSScheduler:
 
 
     def sent(self, gps_data):
+        # When a packet is sent, keep a backup of the previous packet for
+        # determining when to send the next one.
         self.last_packet_gps_data = gps_data

@@ -3,7 +3,7 @@ import logging
 import socket
 
 from config import GDL90_RECV_PORT
-from gps import Base_GPS, GPS_Data
+from gps_base import Base_GPS, GPS_Data
 import gdl90.decoder
 
 

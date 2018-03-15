@@ -3,7 +3,7 @@ from gps3 import gps3
 import logging
 import math
 
-from .gps import Base_GPS, GPS_Data
+from gps_base import Base_GPS, GPS_Data
 
 
 class GPSD_Client(Base_GPS):
