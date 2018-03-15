@@ -78,9 +78,10 @@ GDL90_RECV_PORT = 4000
 #
 # - "custom", specify your own? write your own? look at scheduler base class.
 #
-SCHEDULER_CLASS = "time"
+SCHEDULER_CLASS = "smart"
 
 # If using the time scheduler, send a packet every 60 seconds
+# ...or whatever you choose here. Go crazy. But not too crazy.
 SCHEDULER_TIME_INTERVAL = 60
 
 

@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 if SCHEDULER_CLASS == "time":
     from scheduler_time import TimerScheduler as Scheduler
-
+elif SCHEDULER_CLASS == "smart":
+    from scheduler_smart import SmartScheduler as Scheduler
 
 if GPS_CLASS == "gpsd":
     from gps_gpsd import GPSD_Client as GPS
@@ -41,6 +42,7 @@ gps.gps_led_pin = YELLOW_LED_PIN
 # set volume (amixer set PCM -- 400)
 # shut off NTP and other things on this image
 # ensure that hopping to the next day works with the weird clock
+# lockfile, kill old socket if found
 
 
 def main():
