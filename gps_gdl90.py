@@ -1,5 +1,6 @@
 import datetime
 import logging
+import math
 import socket
 
 from config import GDL90_RECV_PORT
@@ -40,10 +41,26 @@ class GDL90_Client(Base_GPS):
                     # Message #11 is processed last, so let's try to send a message
                     # when we receive all the info we need from the GDL90 pipe
 
+                    latitude_decimal_degrees = decoder.latitude
+                    longitude_decimal_degrees = decoder.longitude
+
+                    latitude_frac_degrees, latitude_whole_degrees = math.modf(abs(latitude_decimal_degrees))
+                    longitude_frac_degrees, longitude_whole_degrees = math.modf(abs(longitude_decimal_degrees))
+
+                    latitude = "{:02d}{:05.2f}".format(
+                        int(latitude_whole_degrees),
+                        latitude_frac_degrees * 60.0,
+                    )
+
+                    longitude = "{:03d}{:05.2f}".format(
+                        int(longitude_whole_degrees),
+                        longitude_frac_degrees * 60.0,
+                    )
+
                     self.gps_data = GPS_Data(
                         fix = decoder.fix,
-                        latitude = decoder.latitude,
-                        longitude = decoder.longitude,
+                        latitude = latitude,
+                        longitude = longitude,
                         altitude = decoder.altitude,
                         course = decoder.course,
                         speed = decoder.speed,
