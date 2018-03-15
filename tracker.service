@@ -1,0 +1,11 @@
+[Unit]
+Description=APRS tracker
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/piaprs/
+ExecStart=/home/pi/piaprs/tracker.py
+
+[Install]
+WantedBy=network-online.target
