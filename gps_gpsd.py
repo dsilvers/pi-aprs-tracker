@@ -77,9 +77,18 @@ class GPSD_Client(Base_GPS):
                     longitude_frac_degrees * 60.0,
                 )
 
-                self.gps_data.course = int(round(tpv['track']))
-                self.gps_data.speed = int(round(tpv['speed'] / 0.51444))
                 self.gps_data.altitude = int(round(tpv['alt'] / 0.3048))
+
+                try:
+                    self.gps_data.course = int(round(tpv['track']))
+                except TypeError:
+                    self.gps_data.course = 0
+
+                try:
+                    self.gps_data.speed = int(round(tpv['speed'] / 0.51444))
+                except TypeError:
+                    self.gps_data.speed = 0
+
 
                 # Convert ISO 8601 date to a datetime object
                 # 2018-03-06T02:43:10.000Z'
