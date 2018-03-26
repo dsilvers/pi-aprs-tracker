@@ -4,8 +4,9 @@ After=network.target
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/piaprs/
+WorkingDirectory=/home/pi/piaprs
 ExecStart=/home/pi/piaprs/tracker.py
+PIDFile=/var/run/tracker.pid
 
 [Install]
 WantedBy=network-online.target

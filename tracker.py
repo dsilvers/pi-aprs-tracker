@@ -39,10 +39,12 @@ gps.gps_led_pin = YELLOW_LED_PIN
 # test GPSD dying
 # fstab -> tmpdisk
 # tune amount of tx delay (doesn't seem to make a difference)
-# set volume (amixer set PCM -- 400)
+# test set volume (amixer set PCM -- 400)
 # shut off NTP and other things on this image
 # ensure that hopping to the next day works with the weird clock
 # lockfile, kill old socket if found
+# use altitude gain/loss in smart algo
+# first packet has incorrect date
 
 
 def main():
