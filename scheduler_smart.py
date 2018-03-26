@@ -50,13 +50,13 @@ class SmartScheduler(scheduler_base.APRSScheduler):
             # Calculate the amount the course has changed since the last packet.
             course_change = abs(self.last_packet_gps_data.course - gps_data.course)
             course_change_angle_rate = BEACON_MIN_TURN_ANGLE + BEACON_TURN_SLOPE / gps_data.speed
-            logging.info("BEACONING: CornerPegging check - course change {} > angle rate {}, seconds since last {} > min turn time {}".format(course_change, course_change_angle_Rate, seconds_since_last, BEACON_MIN_TURN_TIME))
+            logging.info("BEACONING: CornerPegging check - course change {} > angle rate {}, seconds since last {} > min turn time {}".format(course_change, course_change_angle_rate, seconds_since_last, BEACON_MIN_TURN_TIME))
             # If the course has made signifigant change and the minimum amount of time
             # between packets has been exceeded, it's time to send a packet.
             if  course_change > course_change_angle_rate and \
                 seconds_since_last > BEACON_MIN_TURN_TIME:
 
-                last_beacon_time = beacon_rate;
+                seconds_since_last = beacon_rate;
                 logging.info("BEACONING: CornerPegging is active, we are turning!")
 
 
