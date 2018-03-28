@@ -77,6 +77,17 @@ class GPSD_Client(Base_GPS):
                     longitude_frac_degrees * 60.0,
                 )
 
+                # Determine proper N/S/E/W directions
+                if latitude_decimal_degrees < 0.0:
+                    self.gps_data.latitude_direction = "S"
+                else:
+                    self.gps_data.latitude_direction = "N"
+
+                if longitude_decimal_degrees < 0.0:
+                    self.gps_data.longitude_direction = "W"
+                else:
+                    self.gps_data.longitude_direction = "E"
+
                 self.gps_data.altitude = int(round(tpv['alt'] / 0.3048))
 
                 try:

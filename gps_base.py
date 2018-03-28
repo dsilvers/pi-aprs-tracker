@@ -11,11 +11,15 @@ from config import *
 
 
 class GPS_Data:
-    def __init__(self, fix=False, latitude=None, longitude=None, altitude=None, 
+    def __init__(self, fix=False, latitude=None, latitude_direction=None,
+        longitude=None, longitude_direction=None, altitude=None, 
         course=None, speed=None, current_datetime=None):
+
         self.fix = fix
         self.latitude = latitude
+        self.latitude_direction = latitude_direction
         self.longitude = longitude
+        self.longitude_direction = longitude_direction
         self.altitude = altitude
         self.course = course
         self.speed = speed
@@ -137,18 +141,6 @@ class Base_GPS:
         digipeaters = DIGIPEATING_PATH.split(b',')
 
 
-        # Determine proper N/S/E/W directions
-        if self.gps_data.latitude < 0.0:
-            latitude_direction = "S"
-        else:
-            latitude_direction = "N"
-
-        if self.gps_data.longitude < 0.0:
-            longitude_direction = "W"
-        else:
-            longitude_direction = "E"
-
-
         # Format APRS info string
         # APRS Info string goes something like this:
         # /235619h4304.95N/08912.63W>000/003/A=000859 comment
@@ -156,10 +148,10 @@ class Base_GPS:
         info = "/{:%H%M%S}h{}{}{}{}{}{}{:03d}/{:03d}/A{:06d} {}".format(
             self.gps_data.current_datetime,         # datetime object
             self.gps_data.latitude,                 # 04304.95
-            latitude_direction,                     # N/S
+            self.gps_data.latitude_direction,       # N/S
             APRS_SYMBOL1,                           # Symbol lookup table, see config
             self.gps_data.longitude,                # 08912.63
-            longitude_direction,                    # E/W
+            self.gps_data.longitude_direction,      # E/W
             APRS_SYMBOL2,                           # Symbol lookup table, see config
             self.gps_data.course,                   # Magnetic heading
             self.gps_data.speed,                    # Speed in knots

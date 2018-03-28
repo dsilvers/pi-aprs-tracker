@@ -57,10 +57,23 @@ class GDL90_Client(Base_GPS):
                         longitude_frac_degrees * 60.0,
                     )
 
+                    # Determine proper N/S/E/W directions
+                    if latitude_decimal_degrees < 0.0:
+                        latitude_direction = "S"
+                    else:
+                        latitude_direction = "N"
+
+                    if longitude_decimal_degrees < 0.0:
+                        longitude_direction = "W"
+                    else:
+                        longitude_direction = "E"
+
                     self.gps_data = GPS_Data(
                         fix = decoder.fix,
                         latitude = latitude,
+                        latitude_direction = latitude_direction,
                         longitude = longitude,
+                        longitude_direction = longitude_direction,
                         altitude = decoder.altitude,
                         course = decoder.course,
                         speed = decoder.speed,
