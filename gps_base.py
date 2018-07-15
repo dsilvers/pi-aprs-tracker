@@ -145,7 +145,7 @@ class Base_GPS:
         # APRS Info string goes something like this:
         # /235619h4304.95N/08912.63W>000/003/A=000859 comment
 
-        info = "/{:%H%M%S}h{}{}{}{}{}{}{:03d}/{:03d}/A{:06d} {}".format(
+        info = "/{:%H%M%S}h{}{}{}{}{}{}{:03d}/{:03d}{}/A={:06d}".format(
             self.gps_data.current_datetime,         # datetime object
             self.gps_data.latitude,                 # 04304.95
             self.gps_data.latitude_direction,       # N/S
@@ -155,8 +155,8 @@ class Base_GPS:
             APRS_SYMBOL2,                           # Symbol lookup table, see config
             self.gps_data.course,                   # Magnetic heading
             self.gps_data.speed,                    # Speed in knots
-            self.gps_data.altitude,                 # Altitude to meters
             APRS_COMMENT,                           # Set comment text in config
+            self.gps_data.altitude,                 # Altitude to meters
         )
 
         logging.info("{}>{},{}:{}".format(

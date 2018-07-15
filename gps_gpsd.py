@@ -27,9 +27,9 @@ class GPSD_Client(Base_GPS):
                 #
                 #    mode     GPS fix? 0/1 = none, 2 = 2D, 3 = 3D [we want a 3D fix]
 
-                # Require a 3D fix before continuing
+                # Require a 3D fix and valid timestamp before continuing
                 # Turn off GPS LED if there is no fix
-                if tpv['mode'] != 3:
+                if tpv['mode'] != 3 or tpv['time'] == "n/a":
                     logging.info("Waitng for 3D GPS fix")
                     self.gps_data = GPS_Data(fix=False)
                     self.gps_led_pin_off()
